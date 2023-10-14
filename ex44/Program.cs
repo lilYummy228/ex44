@@ -14,6 +14,7 @@ namespace ex44
 
             Customer customer = new Customer();
             Player player = new Player();
+            Shop shop = new Shop();
             bool isOpen = true;
 
             while (isOpen)
@@ -31,7 +32,7 @@ namespace ex44
                 switch (Console.ReadLine())
                 {
                     case CommandBuyWeapon:
-                        player.MakeTransaction(customer);
+                        shop.MakeTransaction(customer, player);
                         break;
 
                     case CommandShowInventory:
@@ -53,10 +54,8 @@ namespace ex44
         }
     }
 
-    class Player
+    class Player : Inventory
     {
-        private List<Product> _inventory = new List<Product>();
-
         public Player()
         {
             Random random = new Random();
@@ -69,26 +68,6 @@ namespace ex44
         public void ShowMoney()
         {
             Console.WriteLine($"Денег в кошельке: {Money} монет");
-        }
-
-        public void MakeTransaction(Customer customer)
-        {
-            Product product = customer.FindProduct();
-
-            if (product != null)
-            {
-                if (CheckSolnevcy(product))
-                {
-                    Pay();
-                    _inventory.Add(product);
-                    customer.SellProduct(product);
-                    Console.WriteLine("Товар успешно куплен...");
-                }
-                else
-                {
-                    Console.WriteLine("Не хватает монет...");
-                }
-            }
         }
 
         public void ShowInventory()
@@ -109,7 +88,12 @@ namespace ex44
             }
         }
 
-        private bool CheckSolnevcy(Product product)
+        public void Pay()
+        {
+            Money -= MoneyToPay;
+        }
+
+        public bool CheckSolnevcy(Product product)
         {
             MoneyToPay = product.Cost;
 
@@ -123,31 +107,24 @@ namespace ex44
                 return false;
             }
         }
-
-        private void Pay()
-        {
-            Money -= MoneyToPay;
-        }
     }
 
-    class Customer
+    class Customer : Inventory
     {
-        private List<Product> _products = new List<Product>();
-
         public Customer()
         {
-            _products.Add(new Product("Меч", 100));
-            _products.Add(new Product("Молот", 130));
-            _products.Add(new Product("Секира", 170));
-            _products.Add(new Product("Длинный лук", 150));
-            _products.Add(new Product("Кинжал", 40));
+            _inventory.Add(new Product("Меч", 100));
+            _inventory.Add(new Product("Молот", 130));
+            _inventory.Add(new Product("Секира", 170));
+            _inventory.Add(new Product("Длинный лук", 150));
+            _inventory.Add(new Product("Кинжал", 40));
         }
 
         public void ShowProducts()
         {
             int numberOfProduct = 1;
 
-            foreach (Product product in _products)
+            foreach (Product product in _inventory)
             {
                 Console.Write($"{numberOfProduct}. ");
                 product.ShowInfo();
@@ -155,20 +132,7 @@ namespace ex44
             }
         }
 
-        public Product FindProduct()
-        {
-            if (TryGetProduct(out Product product))
-                return product;
-            else
-                return null;
-        }
-
-        public void SellProduct(Product product)
-        {
-            _products.Remove(product);
-        }
-
-        private bool TryGetProduct(out Product product)
+        public Product TryGetProduct(out Product product)
         {
             ShowProducts();
 
@@ -176,23 +140,20 @@ namespace ex44
 
             if (int.TryParse(Console.ReadLine(), out int productNumber))
             {
-                if (productNumber - 1 < _products.Count && productNumber > 0)
+                if (productNumber - 1 < _inventory.Count && productNumber > 0)
                 {
-                    product = _products[productNumber - 1];
-                    return true;
+                    return product = _inventory[productNumber - 1];
                 }
                 else
                 {
                     Console.WriteLine("Такого продукта нет...");
-                    product = null;
-                    return false;
+                    return product = null;
                 }
             }
             else
             {
                 Console.WriteLine("Неккоректный ввод...");
-                product = null;
-                return false;
+                return product = null;
             }
         }
     }
@@ -211,6 +172,34 @@ namespace ex44
         public void ShowInfo()
         {
             Console.WriteLine($"{Name}\nЦена: {Cost} монет\n");
+        }
+    }
+
+    class Inventory
+    {
+        public List<Product> _inventory = new List<Product>();
+    }
+
+    class Shop
+    {
+        public void MakeTransaction(Customer customer, Player player)
+        {
+            Product product = customer.TryGetProduct(out product);
+
+            if (product != null)
+            {
+                if (player.CheckSolnevcy(product))
+                {
+                    player.Pay();
+                    player._inventory.Add(product);
+                    customer._inventory.Remove(product);
+                    Console.WriteLine("Товар успешно куплен...");
+                }
+                else
+                {
+                    Console.WriteLine("Не хватает монет...");
+                }
+            }
         }
     }
 }
