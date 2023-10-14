@@ -12,7 +12,7 @@ namespace ex44
             const string CommandShowInventory = "3";
             const string CommandExit = "4";
 
-            Customer customer = new Customer();
+            Seller customer = new Seller();
             Player player = new Player();
             Shop shop = new Shop();
             bool isOpen = true;
@@ -54,7 +54,7 @@ namespace ex44
         }
     }
 
-    class Player : Inventory
+    class Player : Person
     {
         public Player()
         {
@@ -109,9 +109,9 @@ namespace ex44
         }
     }
 
-    class Customer : Inventory
+    class Seller : Person
     {
-        public Customer()
+        public Seller()
         {
             _inventory.Add(new Product("Меч", 100));
             _inventory.Add(new Product("Молот", 130));
@@ -175,14 +175,24 @@ namespace ex44
         }
     }
 
-    class Inventory
+    class Person
     {
-        public List<Product> _inventory = new List<Product>();
+        protected List<Product> _inventory = new List<Product>();
+
+        public void AddProductToInventory(Product product)
+        {
+            _inventory.Add(product);
+        }
+
+        public void RemoveProductFromInventory(Product product)
+        {
+            _inventory.Remove(product);
+        }
     }
 
     class Shop
     {
-        public void MakeTransaction(Customer customer, Player player)
+        public void MakeTransaction(Seller customer, Player player)
         {
             Product product = customer.TryGetProduct(out product);
 
@@ -191,8 +201,8 @@ namespace ex44
                 if (player.CheckSolnevcy(product))
                 {
                     player.Pay();
-                    player._inventory.Add(product);
-                    customer._inventory.Remove(product);
+                    player.AddProductToInventory(product);
+                    customer.RemoveProductFromInventory(product);
                     Console.WriteLine("Товар успешно куплен...");
                 }
                 else
